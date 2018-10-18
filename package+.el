@@ -140,7 +140,7 @@
 
   (defun package-transitive-closure (pkgs)
     (car
-     (package+/topological-sort
+     (topo-sort
       (mapcar 'map-to-package-deps
               (sort (delete-duplicates
                      (flatten (mapcar 'map-to-package-deps pkgs)))
@@ -171,9 +171,6 @@
                      (package-transitive-closure packages))
      'symbol-list<))
 
-  (defun topo (lst)
-    (car (package+/topological-sort lst)))
-
   (defun package-cleanup (packages)
     "Delete installed packages not explicitly declared in PACKAGES."
     (let* ((haves (package-manifest-with-deps (mapcar 'car package-alist)))
@@ -181,8 +178,8 @@
            (removes (seq-filter
                      (lambda (name) (assoc name package-alist))
                      (cl-set-difference
-                      (topo (package-manifest-with-deps (mapcar 'car package-alist)))
-                      (topo (package-manifest-with-deps packages))))))
+                      (topo-sort (package-manifest-with-deps (mapcar 'car package-alist)))
+                      (topo-sort (package-manifest-with-deps packages))))))
       (message "Removing packages: %S" removes)
       (mapc 'package-delete-by-name (reverse removes))
       ))) ; (unless (fboundp 'package-cleanup)
@@ -210,7 +207,7 @@ control."
 
 ;; stolen (and modified) from:
 ;; https://github.com/dimitri/el-get/blob/master/el-get-dependencies.el
-(defun package+/topological-sort (graph)
+(defun topo-sort (graph)
   (let* ((entries (make-hash-table))
          ;; avoid obsolete `flet' & backward-incompatible `cl-flet'
          (entry (lambda (v)
